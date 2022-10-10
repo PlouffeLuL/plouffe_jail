@@ -1,5 +1,7 @@
-# Plouffe_jail
+# Plouffe Jail
+Jail and community services script for fivem
 
-# **[Discord](https://discord.gg/xJVCY9AvvW)**
+# **[Docs](https://plouffelul.github.io/)**
+**[Discord](https://discord.gg/xJVCY9AvvW)**
+**[Tebex](https://plouffe.tebex.io)**
 
-# **[Tebex](https://plouffe.tebex.io)**
