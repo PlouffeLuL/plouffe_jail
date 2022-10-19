@@ -34,6 +34,8 @@ local guardsCoords = {
 	}
 }
 
+local function null() end
+
 local function wake()
     local list = Callback.Sync("plouffe_jail:loadPlayer")
     for k,v in pairs(list) do
@@ -65,51 +67,163 @@ function Jail:RegisterEvents()
     AddEventHandler("plouffe_jail:outside_mid", self.DeleteGuards)
     AddEventHandler("plouffe_jail:onWork", self.OnWork)
 
+    AddEventHandler("plouffe_jail:onComServ_Work", self.OnComServWork)
+
     AddEventHandler("plouffe_jail:imStupid", self.stupid)
     AddEventHandler("plouffe_jail:notStupid", self.notStupid)
 
     AddEventHandler("plouffe_jail:onGuardInteraction", self.GuardInteraction)
 
-    AddEventHandler("plouffe_jail:open_shop", Jail.OpenShop)
+    AddEventHandler("plouffe_jail:open_shop", self.OpenShop)
 
-    Utils.RegisterNetEvent("plouffe_jail:isInJail", Jail.SetInJail)
+    AddEventHandler("plouffe_jail:inComserv", self.InComserv)
+    AddEventHandler("plouffe_jail:outsideComserv", self.OutsideComserv)
 
-    Utils.RegisterNetEvent("plouffe_jail:removeWorkZone", function(index)
-        Jail.jobs_zones[index].active = false
+    AddEventHandler("plouffe_jail:onComservGuardInteraction", self.onComservGuardInteraction)
 
-        if not Jail.isInJail then
-            return
-        end
+    Utils.RegisterNetEvent("plouffe_jail:isInJail", self.SetInJail)
 
-        exports.plouffe_lib:DestroyZone(index)
-    end)
+    Utils.RegisterNetEvent("plouffe_jail:removeWorkZone", self.RemoveWorkZone)
+    Utils.RegisterNetEvent("plouffe_jail:addWorkZone", self.AddWorkZone)
 
-    Utils.RegisterNetEvent("plouffe_jail:addWorkZone", function(index)
-        Jail.jobs_zones[index].active = true
-        if not Jail.isInJail then
-            return
-        end
+    Utils.RegisterNetEvent("plouffe_jail:isInComServ", self.SetInComserv)
 
-        exports.plouffe_lib:Register(Jail.jobs_zones[index])
-    end)
+    Utils.RegisterNetEvent("plouffe_jail:removeComServZone", self.RemoveComServZone)
+    Utils.RegisterNetEvent("plouffe_jail:addComServZone", self.AddComServZone)
 
-    Callback.Register("plouffe_jail:unJail", Jail.SetOutOfJail)
+    Callback.Register("plouffe_jail:clearComserv", self.ClearComServ)
+
+    Callback.Register("plouffe_jail:unJail", self.SetOutOfJail)
 
     self.cache = exports.plouffe_lib:OnCache(function(cache)
         self.cache = cache
     end)
 
-    AddStateBagChangeHandler("dead", "LocalPlayer",function(bagName,key,value,reserved,replicated)
+    AddStateBagChangeHandler("dead", "LocalPlayer", function(bagName,key,value,reserved,replicated)
         if value then
-            Jail.notStupid()
+            self.notStupid()
         end
     end)
+end
+
+function Jail.onComservGuardInteraction()
+    print("Guard lel")
+
+    local finished = Interface.Progress.Circle({
+        duration = 1500,
+        useWhileDead = false,
+        canCancel = false,
+        disable = {
+            move = true,
+            car = true,
+            combat = true
+        },
+        anim = {dict = "mp_common", clip = "givetake1_a"}
+    })
+end
+
+function Jail.RemoveComServZone(index)
+    Jail.comServ.jobs_zones[index].active = false
+    if not Jail.isInComServ then
+        return
+    end
+
+    exports.plouffe_lib:DestroyZone(index)
+end
+
+function Jail.AddComServZone(index)
+    Jail.comServ.jobs_zones[index].active = true
+    if not Jail.isInComServ then
+        return
+    end
+
+    exports.plouffe_lib:Register(Jail.jobs_zones[index])
+end
+
+function Jail.InComserv()
+    --- Comserv zone not sent
+end
+
+function Jail.OutsideComserv()
+    --- Comserv zone not sent
+end
+
+function Jail.SetInComserv()
+    Jail.isInComServ = true
+    local refreshed = Callback.Sync("plouffe_jail:refresh_zone", "comserv", Jail.auth)
+
+    for k,v in pairs(Jail.comServ.jobs_zones) do
+        if refreshed[k] then
+            v.active = true
+        end
+        if v.active then
+            local registered, reason = exports.plouffe_lib:Register(v)
+        end
+    end
+end
+
+function Jail.ClearComServ()
+    Jail.isInComServ = false
+
+    for k,v in pairs(Jail.comServ.jobs_zones) do
+        exports.plouffe_lib:DestroyZone(k)
+    end
+
+    return true
+end
+
+function Jail.OnComServWork(data)
+    if not Jail.isInComServ then
+        return
+    end
+
+    local finished = Interface.Progress.Circle({
+        duration = Jail.comServ.jobs[data.job_type].duration,
+        useWhileDead = false,
+        canCancel = true,
+        disable = {
+            move = true,
+            car = true,
+            combat = true
+        },
+        anim = Jail.comServ.jobs[data.job_type].anim,
+        prop =  Jail.comServ.jobs[data.job_type].prop
+    })
+
+    if not finished then
+        return
+    end
+
+    TriggerServerEvent("plouffe_jail:finished_job", data, Jail.auth)
+end
+
+function Jail.RemoveWorkZone(index)
+    Jail.jobs_zones[index].active = false
+    if not Jail.isInJail then
+        return
+    end
+
+    exports.plouffe_lib:DestroyZone(index)
+end
+
+function Jail.AddWorkZone(index)
+    Jail.jobs_zones[index].active = true
+    if not Jail.isInJail then
+        return
+    end
+
+    exports.plouffe_lib:Register(Jail.jobs_zones[index])
 end
 
 function Jail.SetInJail()
     Jail.isInJail = true
     Jail.CheckForEntityDamage()
+
+    local refreshed = Callback.Sync("plouffe_jail:refresh_zone", "jail", Jail.auth)
     for k,v in pairs(Jail.jobs_zones) do
+        if refreshed[k] then
+            v.active = true
+        end
         if v.active then
             local registered, reason = exports.plouffe_lib:Register(v)
         end
@@ -118,8 +232,11 @@ end
 
 function Jail.SetOutOfJail()
     Jail.isInJail = false
-    RemoveEventHandler(Jail.cookie_entityDamaged)
-    Jail.cookie_entityDamaged = nil
+    if Jail.cookie_entityDamaged then
+        RemoveEventHandler(Jail.cookie_entityDamaged)
+        Jail.cookie_entityDamaged = nil
+    end
+
     for k,v in pairs(Jail.jobs_zones) do
         exports.plouffe_lib:DestroyZone(k)
     end
@@ -132,7 +249,6 @@ end
 function Jail.OpenShop()
     local buyable_items, reputation = Callback.Sync("plouffe_jail:getShopData", Jail.auth)
     local menu = {}
-
     for k,v in pairs(buyable_items) do
         if v.price <= reputation then
             menu[#menu+1] = {
@@ -144,7 +260,11 @@ function Jail.OpenShop()
     end
 
     if #menu < 1 then
-        return
+        return Interface.Notifications.Show({
+            style = "info",
+            header = "Jail",
+            message = "Do some work if you want to talk to me"
+        })
     end
 
     local clicked = Interface.Menu.Open(menu)
@@ -152,7 +272,17 @@ function Jail.OpenShop()
         return
     end
 
-    --- [To do] Add progress bar with giveOrTake aimation + baggie?
+    local finished = Interface.Progress.Circle({
+        duration = 1500,
+        useWhileDead = false,
+        canCancel = false,
+        disable = {
+            move = true,
+            car = true,
+            combat = true
+        },
+        anim = {dict = "mp_common", clip = "givetake1_a"}
+    })
 
     TriggerServerEvent("plouffe_jail:trade_item", clicked.item, Jail.auth)
 end
@@ -187,7 +317,13 @@ function Jail.OnYoga()
         return
     end
 
-    print("Yoga")
+    if GetResourceState('plouffe_status') == "started" then
+        return exports.plouffe_status:Yoga()
+    end
+
+    if not IsPedActiveInScenario(Jail.cache.ped) then
+        TaskStartScenarioInPlace(Jail.cache.ped, "WORLD_HUMAN_YOGA", 0, true)
+    end
 end
 
 function Jail.OnClothing()
@@ -195,27 +331,32 @@ function Jail.OnClothing()
         return
     end
 
-    print("Clothing")
+    if Jail.frameWork == "esx" then
+        TriggerEvent("esx_skin:openMenu", null, null)
+    elseif Jail.frameWork == "qbcore" then
+        TriggerEvent("qb-clothing:client:openMenu")
+    elseif Jail.frameWork == "ox" then
+        TriggerEvent("ox_appearance:wardrobe")
+    end
 end
 
 function Jail.GuardInteraction()
     local data = Callback.Sync("plouffe_jail:getTimeLeft", Jail.auth)
-    if not data then
-        return
-    end
+    local menu = {}
 
-    local menu = {
-        {
+    if data then
+        menu[#menu+1] = {
             header = "Sentence ecouler",
             text = data.time_passed,
-        },
-        {
+        }
+
+        menu[#menu+1] = {
             header = "Sentence restante",
             text = data.time_left,
         }
-    }
+    end
 
-    if data.canLeave then
+    if not data or data.canLeave then
         menu[#menu+1] = {
             header = "Votre sentence est terminer",
             text = "cliquer ici pour sortir",
@@ -228,6 +369,10 @@ function Jail.GuardInteraction()
         return
     end
     if clicked.leave then
+        if not data then
+            return Jail.SetOutOfJail()
+        end
+
         TriggerServerEvent("plouffe_jail:request_release", Jail.auth)
     end
 end

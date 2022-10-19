@@ -5,6 +5,7 @@ local Utils <const> = exports.plouffe_lib:Get("Utils")
 local Inventory <const> = exports.plouffe_lib:Get("Inventory")
 local Uniques <const> = exports.plouffe_lib:Get("Uniques")
 
+local active_comserv_players = {}
 local active_jailed_players = {}
 
 local jobs_done = setmetatable({}, {
@@ -12,6 +13,7 @@ local jobs_done = setmetatable({}, {
         for k,v in pairs(active_jailed_players) do
             TriggerClientEvent("plouffe_jail:removeWorkZone", k, key)
         end
+        Jail.jobs_zones[key].active = false
         rawset(self,key,val)
     end,
 
@@ -19,10 +21,30 @@ local jobs_done = setmetatable({}, {
         for k,v in pairs(active_jailed_players) do
             TriggerClientEvent("plouffe_jail:addWorkZone", k, key)
         end
+        Jail.jobs_zones[key].active = true
         self[key] = nil
     end
 })
 
+local comserv_done = setmetatable({}, {
+    __newindex = function(self,key,val)
+        for k,v in pairs(active_comserv_players) do
+            TriggerClientEvent("plouffe_jail:removeComServZone", k, key)
+        end
+        Jail.comServ.jobs_zones[key].active = false
+        rawset(self,key,val)
+    end,
+
+    __call = function(self, key)
+        for k,v in pairs(active_comserv_players) do
+            TriggerClientEvent("plouffe_jail:addComServZone", k, key)
+        end
+        Jail.comServ.jobs_zones[key].active = true
+        self[key] = nil
+    end
+})
+
+local comserv_characters
 local jailed_characters
 local jailers_reputation
 
@@ -30,8 +52,19 @@ function Jail.Wake()
     Jail.ValidateConfig()
     Jail:CreateWorkZones()
 
+    comserv_characters = json.decode(GetResourceKvpString("comserv_characters") or "[]")
     jailed_characters = json.decode(GetResourceKvpString("jailed_characters") or "[]")
     jailers_reputation = json.decode(GetResourceKvpString("jailers_reputation") or "[]")
+
+    setmetatable(comserv_characters, {
+        __call = function(self)
+            SetResourceKvp(tostring(self), json.encode(self))
+        end,
+
+        __tostring = function()
+            return "comserv_characters"
+        end
+    })
 
     setmetatable(jailed_characters, {
         __call = function(self)
@@ -80,6 +113,22 @@ function Jail:CreateWorkZones()
             }
         end
     end
+
+    for job_type,job_data in pairs(self.comServ.jobs) do
+        for k,v in pairs(job_data.coords) do
+            local name = ("%s_%s"):format(job_type,k)
+            self.comServ.jobs_zones[name] = {
+                name = name,
+                distance = job_data.distance,
+                isZone = job_data.isZone,
+                label = job_data.label,
+                keyMap = job_data.keyMap,
+                params = {job_type = job_type, job_index = name},
+                coords = v,
+                active = true
+            }
+        end
+    end
 end
 
 function Jail:GetData(key, playerId)
@@ -88,6 +137,11 @@ function Jail:GetData(key, playerId)
     if jailed_characters[unique] and jailed_characters[unique].out_time > os.time() then
         retval.isInJail = true
         active_jailed_players[playerId] = true
+    end
+
+    if comserv_characters[unique] and comserv_characters[unique].amount > 0 then
+        retval.isInComServ = true
+        active_comserv_players[playerId] = true
     end
 
     for k,v in pairs(self) do
@@ -100,7 +154,10 @@ function Jail:GetData(key, playerId)
 end
 
 function Jail.ValidateConfig()
+    Jail.maxComServ = tonumber(GetConvar("plouffe_jail:max_com_serv", ""))
+    Jail.comServPunition = tonumber(GetConvar("plouffe_jail:com_serv_punition", ""))
     Jail.maxJail = tonumber(GetConvar("plouffe_jail:max_jail_time", ""))
+
     local data = json.decode(GetConvar("plouffe_jail:police_groups", ""))
     if data then
         Jail.PoliceGroups = {}
@@ -244,6 +301,23 @@ function Jail.RequestRelease(auth)
 end
 RegisterNetEvent("plouffe_jail:request_release", Jail.RequestRelease)
 
+function Jail.TradeItem(item, auth)
+    local playerId = source
+    if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:trade_item") then
+        return
+    end
+
+    local unique = Uniques.Get(playerId)
+    if not Jail.buyable_items[item] or (Jail.buyable_items[item] and Jail.buyable_items[item].price > jailers_reputation[unique]) then
+        return
+    end
+
+    jailers_reputation[unique] -= Jail.buyable_items[item].price
+
+    Inventory.AddItem(playerId, item, 1)
+end
+RegisterNetEvent("plouffe_jail:trade_item", Jail.TradeItem)
+
 function Jail.ReduceSentence(playerId, amount)
     local unique = Uniques.Get(playerId)
     if not jailed_characters[unique] then
@@ -299,6 +373,44 @@ function Jail.Remove(idType, id)
 end
 exports("Remove", Jail.Remove)
 
+function Jail.AddComServ(playerId, amount)
+    local unique = Uniques.Get(playerId)
+    local coords = Jail.comServ.coords
+    local ped = GetPlayerPed(playerId)
+
+    active_comserv_players[playerId] = true
+
+    comserv_characters[unique] = comserv_characters[unique] or {amount = 0}
+    comserv_characters[unique].amount += amount
+    comserv_characters()
+
+    if comserv_characters[unique].amount > Jail.maxComServ then
+        return Jail.Set(playerId, Jail.comServPunition)
+    end
+
+    SetEntityCoords(ped, coords.x, coords.y, coords.z)
+    TriggerClientEvent("plouffe_jail:isInComServ", playerId)
+end
+exports("AddComServ", Jail.AddComServ)
+
+function Jail.RemoveComServ(idType, id)
+    local unique = (idType == "playerId" and Uniques.Get(id)) or (idType == "unique" and id)
+    if not comserv_characters[unique] then
+        return
+    end
+
+    comserv_characters[unique] = nil
+    comserv_characters()
+    if idType ~= "playerId" then
+        return
+    end
+
+    active_comserv_players[id] = nil
+
+    local _ = Callback.Sync(id, "plouffe_jail:clearComserv")
+end
+exports("RemoveComServ", Jail.RemoveComServ)
+
 Callback.Register("plouffe_jail:loadPlayer", function(playerId)
     local registred, key = Auth.Register(playerId)
 
@@ -348,21 +460,40 @@ Callback.Register("plouffe_jail:getShopData", function(playerId, auth)
     return Jail.buyable_items, jailers_reputation[unique]
 end)
 
+Callback.Register("plouffe_jail:refresh_zone", function(playerId, zoneType, auth)
+    if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:getShopData") then
+        return
+    end
+
+    local data = zoneType == "jail" and Jail.jobs_zones or zoneType == "comserv" and Jail.comServ.jobs_zones
+    local retval = {}
+    for k,v in pairs(data) do
+        if v.active then
+            retval[k] = v.active
+        end
+    end
+
+    return retval
+end)
+
 AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
 	if eventData.secondsRemaining == 60 then
 		SetTimeout(50000, function()
             jailed_characters()
             jailers_reputation()
+            comserv_characters()
 		end)
 	end
 end)
-CreateThread(Jail.Wake)
 
 AddEventHandler("playerDropped", function()
     local playerId = source
-    if not active_jailed_players[playerId] then
+    if not active_jailed_players[playerId] and not active_comserv_players[playerId] then
         return
     end
 
+    active_comserv_players[playerId] = nil
     active_jailed_players[playerId] = nil
 end)
+
+CreateThread(Jail.Wake)

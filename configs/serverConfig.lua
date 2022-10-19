@@ -5,6 +5,78 @@ Server = {
 }
 
 Jail = {
+	frameWork = GetConvar("plouffe_lib:framework"),
+	comServ = {
+		coords = vector3(1113.8276367188, -648.86486816406, 57.750007629395),
+		jobs = {
+			comserv_clean_ground = {
+				duration = 10000,
+				anim = {dict = 'amb@world_human_gardener_leaf_blower@base', clip = 'base'},
+				prop = {bone = 28422, model = `prop_leaf_blower_01`, pos = vec3(0.0, 0.0, 0.0), rot = vec3(0.0, 0.0, 0.0) },
+				reduceValue = {min = 1, max = 3},
+				distance = 6,
+				isZone = true,
+				label = "Passer le soufleur",
+				params = {job_type = "clean_ground", job_index = ""},
+				keyMap = {
+					key = "E",
+					event = "plouffe_jail:onComServ_Work"
+				},
+				coords = {
+					vector3(1144.5314941406, -644.07501220703, 56.855709075928),
+					vector3(1127.8784179688, -646.75836181641, 56.826984405518),
+					vector3(1144.5382080078, -712.00073242188, 56.708030700684),
+					vector3(1057.5083007813, -719.93017578125, 56.735481262207),
+					vector3(1060.8468017578, -614.62078857422, 56.754543304443)
+				}
+			},
+			comserv_clean_drink = {
+				duration = 10000,
+				anim = {dict = 'timetable@floyd@clean_kitchen@base', clip = 'base'},
+				prop = {bone = 28422, model = `prop_sponge_01`, pos = vec3(0.0, 0.0, -0.01), rot = vec3(90.0, 0.0, 0.0) },
+				reduceValue = {min = 1, max = 3},
+				distance = 0.5,
+				isZone = true,
+				label = "Nettoyer",
+				params = {job_type = "clean_water_drink_stuff", job_index = ""},
+				keyMap = {
+					key = "E",
+					event = "plouffe_jail:onComServ_Work"
+				},
+				coords = {
+					vector3(1126.5113525391, -665.25347900391, 56.757286071777),
+					vector3(1137.2478027344, -736.75909423828, 56.855751037598),
+					vector3(1052.8720703125, -710.60009765625, 56.843505859375),
+					vector3(1061.4716796875, -608.58551025391, 56.800880432129),
+					vector3(1131.0853271484, -600.55328369141, 56.788669586182)
+				}
+			},
+			comserv_broom_floor = {
+				duration = 20000,
+				anim = {dict = 'anim@amb@drug_field_workers@rake@male_a@base', clip = 'base', flag = 1},
+				prop = {bone = 28422, model = `prop_tool_broom`, pos = vec3(-0.0100, 0.0400, -0.0300), rot = vec3(0.0, 0.0, 0.0)},
+				reduceValue = {min = 1, max = 3},
+				distance = 1.0,
+				isZone = true,
+				label = "Passer le soufleur",
+				params = {job_type = "broom_floor", job_index = ""},
+				keyMap = {
+					key = "E",
+					event = "plouffe_jail:onComServ_Work"
+				},
+				coords = {
+					vector3(1109.1571044922, -631.74468994141, 56.816036224365),
+					vector3(1114.5059814453, -660.85668945313, 56.813186645508),
+					vector3(1075.6676025391, -707.90222167969, 57.515033721924),
+					vector3(1071.2813720703, -712.10003662109, 58.483585357666),
+					vector3(1065.7161865234, -716.740234375, 57.473072052002),
+					vector3(1117.8043212891, -656.75061035156, 56.813179016113),
+					vector3(1112.0157470703, -645.89270019531, 56.816040039063)
+				}
+			}
+		},
+		jobs_zones = {}
+	},
 	releasedCoords = vector3(1836.2176513672, 2594.3996582031, 46.01439666748),
 	cells = {
 		vector3(1758.6975097656, 2472.3298339844, 45.740753173828),
@@ -157,6 +229,45 @@ Jail = {
 				coords = vector3(1751.7360839844, 2535.4787597656, 43.58544921875),
 				heading = 26.23263359069824,
 				model = 's_m_y_prismuscl_01',
+			}
+		},
+
+		comServ_sector = {
+			name = "comServ_sector",
+			isZone = true,
+			distance = 70,
+			zMax = 74.3,
+			zMin = 49.5,
+			coords = {
+				vector3(1041.9793701172, -533.47052001953, 61.310836791992),
+				vector3(1100.3156738281, -522.79187011719, 63.374767303467),
+				vector3(1152.5814208984, -523.39459228516, 64.858680725098),
+				vector3(1180.6265869141, -751.51263427734, 57.944431304932),
+				vector3(1052.1011962891, -745.77587890625, 57.956470489502),
+				vector3(1028.0258789063, -726.91540527344, 57.695407867432),
+				vector3(993.46612548828, -672.12829589844, 57.313465118408),
+				vector3(1019.4408569336, -651.77105712891, 58.813140869141)
+			},
+			zoneMap = {
+			  inEvent = "plouffe_jail:inComserv",
+			  outEvent = "plouffe_jail:outsideComserv"
+			}
+		},
+
+		comserv_guard = {
+			name = "comserv_guard",
+			coords = vector3(1113.6188964844, -637.56158447266, 56.812908172607),
+			distance = 1.0,
+			isZone = true,
+			label = "Parler avec le garde",
+			keyMap = {
+				event = "plouffe_jail:onComservGuardInteraction",
+				key = "E"
+			},
+			ped = {
+				coords = vector3(1113.6188964844, -637.56158447266, 56.812908172607),
+				heading = 102.79093933105,
+				model = 's_m_m_prisguard_01'
 			}
 		}
 	},
