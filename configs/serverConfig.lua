@@ -10,10 +10,9 @@ Jail = {
 		coords = vector3(1113.8276367188, -648.86486816406, 57.750007629395),
 		jobs = {
 			comserv_clean_ground = {
-				duration = 10000,
+				duration = 30000,
 				anim = {dict = 'amb@world_human_gardener_leaf_blower@base', clip = 'base'},
 				prop = {bone = 28422, model = `prop_leaf_blower_01`, pos = vec3(0.0, 0.0, 0.0), rot = vec3(0.0, 0.0, 0.0) },
-				reduceValue = {min = 1, max = 3},
 				distance = 6,
 				isZone = true,
 				label = "Passer le soufleur",
@@ -31,10 +30,9 @@ Jail = {
 				}
 			},
 			comserv_clean_drink = {
-				duration = 10000,
+				duration = 30000,
 				anim = {dict = 'timetable@floyd@clean_kitchen@base', clip = 'base'},
 				prop = {bone = 28422, model = `prop_sponge_01`, pos = vec3(0.0, 0.0, -0.01), rot = vec3(90.0, 0.0, 0.0) },
-				reduceValue = {min = 1, max = 3},
 				distance = 0.5,
 				isZone = true,
 				label = "Nettoyer",
@@ -52,10 +50,9 @@ Jail = {
 				}
 			},
 			comserv_broom_floor = {
-				duration = 20000,
+				duration = 30000,
 				anim = {dict = 'anim@amb@drug_field_workers@rake@male_a@base', clip = 'base', flag = 1},
 				prop = {bone = 28422, model = `prop_tool_broom`, pos = vec3(-0.0100, 0.0400, -0.0300), rot = vec3(0.0, 0.0, 0.0)},
-				reduceValue = {min = 1, max = 3},
 				distance = 1.0,
 				isZone = true,
 				label = "Passer le soufleur",
@@ -78,6 +75,7 @@ Jail = {
 		jobs_zones = {}
 	},
 	releasedCoords = vector3(1836.2176513672, 2594.3996582031, 46.01439666748),
+	pictureCoords = vector4(1844.3754882813, 2594.3928222656, 46.016227722168, 90.991333007813),
 	cells = {
 		vector3(1758.6975097656, 2472.3298339844, 45.740753173828),
 		vector3(1761.6942138672, 2474.4475097656, 45.740753173828),

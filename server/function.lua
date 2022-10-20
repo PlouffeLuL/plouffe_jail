@@ -155,6 +155,7 @@ end
 
 function Jail.ValidateConfig()
     Jail.maxComServ = tonumber(GetConvar("plouffe_jail:max_com_serv", ""))
+    Jail.maxSentencedComServ = tonumber(GetConvar("plouffe_jail:max_com_serv_sentence", ""))
     Jail.comServPunition = tonumber(GetConvar("plouffe_jail:com_serv_punition", ""))
     Jail.maxJail = tonumber(GetConvar("plouffe_jail:max_jail_time", ""))
 
@@ -221,6 +222,30 @@ function Jail:CooldownThread(index)
     end)
 end
 
+function Jail:ComservCooldownThread(index)
+    comserv_done[index] = os.time()
+
+    if self.coolDownThread then
+        return
+    end
+
+    self.coolDownThread = true
+
+    CreateThread(function ()
+        while Utils.TableLen(comserv_done) > 0 do
+            Wait(1000 * 10)
+            local time = os.time()
+            for k,v in pairs(comserv_done) do
+                if time - v > (60 * 1) then
+                    comserv_done(k)
+                end
+            end
+        end
+
+        self.coolDownThread = false
+    end)
+end
+
 function Jail.SendPlayerToJail(time,targetId,auth)
     local playerId = source
     if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:sendToJail") then
@@ -276,12 +301,20 @@ function Jail.FinishedJob(data, auth)
         return
     end
 
-    local unique = Unique.Get(playerId)
-    local data = Jail.jobs[data.job_type]
-    local rVal = data.reduceValue
+    local zone = Jail.jobs_zones[data.job_index]
+    if not zone.active then
+        return Utils.Notify(playerId, {
+            style = "info",
+            header = "Jail",
+            message = "Already completed"
+        })
+    end
+
+    local unique = Uniques.Get(playerId)
+    local rVal = Jail.jobs[data.job_type].reduceValue
 
     Jail:CooldownThread(data.job_index)
-    Jail.ReduceSentence(playerId, math.random(rVal.min, rVal.max))
+    Jail.ReduceSentence(playerId, math.ceil(math.random(rVal.min, rVal.max)))
 
     jailers_reputation[unique] += (data.repValue or 1)
 end
@@ -318,6 +351,48 @@ function Jail.TradeItem(item, auth)
 end
 RegisterNetEvent("plouffe_jail:trade_item", Jail.TradeItem)
 
+function Jail.FinishedComservJob(data, auth)
+    local playerId = source
+    if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:finished_comserv_job") then
+        return
+    end
+
+    local zone = Jail.comServ.jobs_zones[data.job_index]
+
+    if not zone.active then
+        return Utils.Notify(playerId, {
+            style = "info",
+            header = "Community services",
+            message = "Already completed"
+        })
+    end
+
+    Jail:ComservCooldownThread(data.job_index)
+    Jail.ReduceComserv("playerId", playerId, 1)
+end
+RegisterNetEvent("plouffe_jail:finished_comserv_job", Jail.FinishedComservJob)
+
+function Jail.SendPlayerToComserv(amount,targetId,auth)
+    local playerId = source
+    if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:sendToComserv") then
+        return
+    end
+
+    if not Jail:IsPlayerAllowed(playerId) or amount > Jail.maxSentencedComServ then
+        return
+    end
+
+    local ped_coords = GetEntityCoords(GetPlayerPed(playerId))
+    local tped_coords = GetEntityCoords(GetPlayerPed(targetId))
+
+    if #(ped_coords - tped_coords) > 5 then
+        return
+    end
+
+    Jail.AddComServ(targetId, amount)
+end
+RegisterNetEvent("plouffe_jail:sendToComserv", Jail.SendPlayerToComserv)
+
 function Jail.ReduceSentence(playerId, amount)
     local unique = Uniques.Get(playerId)
     if not jailed_characters[unique] then
@@ -340,16 +415,24 @@ exports("UpSentence", Jail.UpSentence)
 
 function Jail.Set(playerId, time)
     local unique = Uniques.Get(playerId)
-    local cellCoords = Jail.cells[math.random(1,#Jail.cells)]
-    local ped = GetPlayerPed(playerId)
+    local retval = {}
 
     active_jailed_players[playerId] = true
 
     jailed_characters[unique] = {sent_time = os.time(), out_time = os.time() + (time * 60)}
     jailed_characters()
     pcall(function() exports.ox_inventory:ConfiscateInventory(playerId) end)
-    SetEntityCoords(ped, cellCoords.x, cellCoords.y, cellCoords.z - 1)
-    TriggerClientEvent("plouffe_jail:isInJail", playerId)
+
+    for k,v in pairs(Jail.jobs_zones) do
+        if v.active then
+            retval[k] = v.active
+        end
+    end
+
+    local currentBucket = GetPlayerRoutingBucket(playerId)
+    SetPlayerRoutingBucket(playerId, math.random(1,99))
+    Callback.Sync(playerId, "plouffe_jail:setInJail", false, retval)
+    SetPlayerRoutingBucket(playerId, currentBucket)
 end
 exports("Set", Jail.Set)
 
@@ -410,6 +493,30 @@ function Jail.RemoveComServ(idType, id)
     local _ = Callback.Sync(id, "plouffe_jail:clearComserv")
 end
 exports("RemoveComServ", Jail.RemoveComServ)
+
+function Jail.ReduceComserv(idType, id, amount)
+    local unique = (idType == "playerId" and Uniques.Get(id)) or (idType == "unique" and id)
+    if not comserv_characters[unique] then
+        return
+    end
+
+    comserv_characters[unique].amount -= amount
+
+    if comserv_characters[unique].amount < 1 then
+        return Jail.RemoveComServ(idType, id)
+    end
+
+    if idType ~= "playerId" then
+        return
+    end
+
+    Utils.Notify(id, {
+        style = "info",
+        header = "Community services",
+        message = ("%s left to do"):format(comserv_characters[unique].amount)
+    })
+end
+exports("ReduceComserv", Jail.ReduceComserv)
 
 Callback.Register("plouffe_jail:loadPlayer", function(playerId)
     local registred, key = Auth.Register(playerId)
@@ -474,6 +581,16 @@ Callback.Register("plouffe_jail:refresh_zone", function(playerId, zoneType, auth
     end
 
     return retval
+end)
+
+Callback.Register("plouffe_jail:getComServLeft", function(playerId, auth)
+    if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:getComServLeft") then
+        return
+    end
+
+    local unique = Uniques.Get(playerId)
+
+    return comserv_characters[unique] and comserv_characters[unique].amount or 0
 end)
 
 AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)

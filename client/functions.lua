@@ -54,7 +54,15 @@ local function wake()
             SetEntityCoords(Jail.cache.ped, cellCoords.x, cellCoords.y, cellCoords.z - 1)
         end)
 
-        Jail.SetInJail()
+        Jail.SetInJail(true)
+    end
+
+    if Jail.isInComServ then
+        for k,v in pairs(Jail.comServ.jobs_zones) do
+            if v.active then
+                local registered, reason = exports.plouffe_lib:Register(v)
+            end
+        end
     end
 end
 
@@ -81,8 +89,6 @@ function Jail:RegisterEvents()
 
     AddEventHandler("plouffe_jail:onComservGuardInteraction", self.onComservGuardInteraction)
 
-    Utils.RegisterNetEvent("plouffe_jail:isInJail", self.SetInJail)
-
     Utils.RegisterNetEvent("plouffe_jail:removeWorkZone", self.RemoveWorkZone)
     Utils.RegisterNetEvent("plouffe_jail:addWorkZone", self.AddWorkZone)
 
@@ -94,6 +100,8 @@ function Jail:RegisterEvents()
     Callback.Register("plouffe_jail:clearComserv", self.ClearComServ)
 
     Callback.Register("plouffe_jail:unJail", self.SetOutOfJail)
+
+    Callback.Register("plouffe_jail:setInJail", self.SetInJail)
 
     self.cache = exports.plouffe_lib:OnCache(function(cache)
         self.cache = cache
@@ -107,8 +115,6 @@ function Jail:RegisterEvents()
 end
 
 function Jail.onComservGuardInteraction()
-    print("Guard lel")
-
     local finished = Interface.Progress.Circle({
         duration = 1500,
         useWhileDead = false,
@@ -119,6 +125,14 @@ function Jail.onComservGuardInteraction()
             combat = true
         },
         anim = {dict = "mp_common", clip = "givetake1_a"}
+    })
+
+    local data = Callback.Sync("plouffe_jail:getComServLeft", Jail.auth)
+
+    Interface.Notifications.Show({
+        style = "info",
+        header = "Community services",
+        message = ("%s left to do"):format(data)
     })
 end
 
@@ -137,7 +151,7 @@ function Jail.AddComServZone(index)
         return
     end
 
-    exports.plouffe_lib:Register(Jail.jobs_zones[index])
+    exports.plouffe_lib:Register(Jail.comServ.jobs_zones[index])
 end
 
 function Jail.InComserv()
@@ -169,6 +183,12 @@ function Jail.ClearComServ()
         exports.plouffe_lib:DestroyZone(k)
     end
 
+    Interface.Notifications.Show({
+        style = "info",
+        header = "Community services",
+        message = "You have finished your community services"
+    })
+
     return true
 end
 
@@ -194,7 +214,7 @@ function Jail.OnComServWork(data)
         return
     end
 
-    TriggerServerEvent("plouffe_jail:finished_job", data, Jail.auth)
+    TriggerServerEvent("plouffe_jail:finished_comserv_job", data, Jail.auth)
 end
 
 function Jail.RemoveWorkZone(index)
@@ -215,19 +235,94 @@ function Jail.AddWorkZone(index)
     exports.plouffe_lib:Register(Jail.jobs_zones[index])
 end
 
-function Jail.SetInJail()
+function Jail.JailCam()
+    local cell_coords = Jail.cells[math.random(1,#Jail.cells)]
+
+    Utils.FadeOut(1000, true)
+
+    local active = true
+    local cam = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+    local dict, anim = "mp_character_creation@customise@male_a", "loop"
+    local prop = Utils.CreateProp('prop_police_id_board', Jail.cache.pedCoords)
+
+    Utils.AssureAnim(dict, true)
+
+    CreateThread(function ()
+        while active do
+            DisableAllControlActions(0)
+            DisableAllControlActions(1)
+            DisableAllControlActions(2)
+            Wait(0)
+        end
+    end)
+
+    SetCamRot(cam, 0, 0, 270)
+	SetCamCoord(cam, 1841.4134521484, 2594.3479003906, 46.714392852783)
+
+	RenderScriptCams(true, false, 0, true, true)
+
+    SetCamActive(cam,true)
+
+    SetEntityCoords(Jail.cache.ped, Jail.pictureCoords.x, Jail.pictureCoords.y, Jail.pictureCoords.z)
+    SetEntityHeading(Jail.cache.ped, Jail.pictureCoords.w)
+
+    AttachEntityToEntity(prop, Jail.cache.ped, GetPedBoneIndex(Jail.cache.ped, 58868), 0.12, 0.24, 0.0, 5.0, 0.0, 70.0, true, true, false, true, 1, true)
+
+    Wait(1000)
+
+    Utils.FadeIn(2000)
+
+    TaskPlayAnim(Jail.cache.ped, dict, anim, 2.0, 2.0, 5000, 1, 0, false, false, false)
+    Wait(5000)
+    TaskTurnPedToFaceCoord(Jail.cache.ped, 1844.1561279297, 2592.7941894531, 46.014404296875, 4800)
+    Wait(1000)
+    TaskPlayAnim(Jail.cache.ped, dict, anim, 2.0, 2.0, 5000, 1, 0, false, false, false)
+    Wait(5000)
+    TaskTurnPedToFaceCoord(Jail.cache.ped, 1844.4268798828, 2595.8078613281, 46.01441192627, 4800)
+    Wait(1500)
+    TaskPlayAnim(Jail.cache.ped, dict, anim, 2.0, 2.0, 5000, 1, 0, false, false, false)
+    Wait(5000)
+
+    Utils.FadeOut(1000, true)
+    SetCamActive(cam,false)
+    RemoveAnimDict(dict)
+    DeleteEntity(prop)
+
+    CreateThread(function()
+        SetEntityCoords(Jail.cache.ped, cell_coords.x, cell_coords.y, cell_coords.z)
+        SetCamCoord(cam, cell_coords.x, cell_coords.y, 1485.477993011475)
+        PointCamAtCoord(cam, cell_coords.x, cell_coords.y, cell_coords.z)
+        SetCamActive(cam,true)
+        Utils.FadeIn(10000)
+        Wait(1000)
+        RenderScriptCams(false,true,10000,true,true)
+        Wait(10000)
+        DestroyCam(cam)
+        active = false
+    end)
+end
+
+function Jail.SetInJail(internal, refreshed)
     Jail.isInJail = true
+
+    if not internal then
+        Jail.JailCam()
+    end
+
     Jail.CheckForEntityDamage()
 
-    local refreshed = Callback.Sync("plouffe_jail:refresh_zone", "jail", Jail.auth)
-    for k,v in pairs(Jail.jobs_zones) do
-        if refreshed[k] then
-            v.active = true
-        end
-        if v.active then
-            local registered, reason = exports.plouffe_lib:Register(v)
+    if refreshed then
+        for k,v in pairs(Jail.jobs_zones) do
+            if refreshed[k] then
+                v.active = true
+            end
+            if v.active then
+                local registered, reason = exports.plouffe_lib:Register(v)
+            end
         end
     end
+
+    return true
 end
 
 function Jail.SetOutOfJail()
@@ -389,11 +484,14 @@ function Jail.OutsideJail()
     end
 end
 
-function Jail.SendToJailMenu()
-    local target, distance = Utils.GetClosestPlayer()
-    local target_id = GetPlayerServerId(target)
+function Jail.SendToJailMenu(data)
+    local target_id = data and type(data) == "table" and NetworkGetPlayerIndexFromPed(data.entity) and GetPlayerServerId(NetworkGetPlayerIndexFromPed(data.entity))
+    if not target_id then
+        local target, distance = Utils.GetClosestPlayer()
+        target_id = GetPlayerServerId(target)
+    end
 
-    if target and target ~= -1 and distance <= 2.0 then
+    if (target and target ~= -1 and distance <= 2.0) or (data and target_id) then
         local data = Interface.Dialog.Open({
             {
                 id = "time",
@@ -447,6 +545,46 @@ function Jail.UnjailMenu()
     end
 end
 exports("UnjailMenu", Jail.UnjailMenu)
+
+function Jail.ComservMenu(data)
+    local target_id = data and type(data) == "table" and NetworkGetPlayerIndexFromPed(data.entity) and GetPlayerServerId(NetworkGetPlayerIndexFromPed(data.entity))
+    if not target_id then
+        local target, distance = Utils.GetClosestPlayer()
+        target_id = GetPlayerServerId(target)
+    end
+
+    if (target and target ~= -1 and distance <= 2.0) or (data and target_id) then
+        local data = Interface.Dialog.Open({
+            {
+                id = "amount",
+                header = "Amount",
+                placeholder = "1,2,3,4,5 ..."
+            }
+        })
+
+        if not data.amount then
+            return
+        end
+
+        local amount = tonumber(data.amount)
+        if not amount or amount > Jail.maxSentencedComServ then
+            return Interface.Notifications.Show({
+                style = "info",
+                header = "Community services",
+                message = Lang.invalid_entry
+            })
+        end
+
+        TriggerServerEvent("plouffe_jail:sendToComserv", amount, target_id, Jail.auth)
+    else
+        Interface.Notifications.Show({
+            style = "info",
+            header = "Community services",
+            message = Lang.no_player_near
+        })
+    end
+end
+exports("ComservMenu", Jail.ComservMenu)
 
 function Jail.SpawnGuards()
     for k,v in pairs(guardsCoords) do
