@@ -15,7 +15,7 @@ Jail = {
 				prop = {bone = 28422, model = `prop_leaf_blower_01`, pos = vec3(0.0, 0.0, 0.0), rot = vec3(0.0, 0.0, 0.0) },
 				distance = 6,
 				isZone = true,
-				label = "Passer le soufleur",
+				label = Lang.comservJobs_cleanGround,
 				params = {job_type = "clean_ground", job_index = ""},
 				keyMap = {
 					key = "E",
@@ -35,7 +35,7 @@ Jail = {
 				prop = {bone = 28422, model = `prop_sponge_01`, pos = vec3(0.0, 0.0, -0.01), rot = vec3(90.0, 0.0, 0.0) },
 				distance = 0.5,
 				isZone = true,
-				label = "Nettoyer",
+				label =  Lang.comservJobs_cleanSink,
 				params = {job_type = "clean_water_drink_stuff", job_index = ""},
 				keyMap = {
 					key = "E",
@@ -55,7 +55,7 @@ Jail = {
 				prop = {bone = 28422, model = `prop_tool_broom`, pos = vec3(-0.0100, 0.0400, -0.0300), rot = vec3(0.0, 0.0, 0.0)},
 				distance = 1.0,
 				isZone = true,
-				label = "Passer le soufleur",
+				label = Lang.comservJobs_broom,
 				params = {job_type = "broom_floor", job_index = ""},
 				keyMap = {
 					key = "E",
@@ -154,7 +154,7 @@ Jail = {
 			isZone = true,
 			distance = 0.7,
 			coords = vector3(1744.8018798828, 2477.916015625, 45.759197235107),
-			label = "Yoga",
+			label = Lang.yoga,
 			keyMap = {
 				key = "E",
 				event = "plouffe_jail:onYoga"
@@ -166,7 +166,7 @@ Jail = {
 			isZone = true,
 			distance = 0.7,
 			coords = vector3(1743.80859375, 2479.2072753906, 45.759349822998),
-			label = "Yoga",
+			label = Lang.yoga,
 			keyMap = {
 				key = "E",
 				event = "plouffe_jail:onYoga"
@@ -178,7 +178,7 @@ Jail = {
 			isZone = true,
 			distance = 0.7,
 			coords = vector3(1743.0496826172, 2480.7268066406, 45.759334564209),
-			label = "Yoga",
+			label = Lang.yoga,
 			keyMap = {
 				key = "E",
 				event = "plouffe_jail:onYoga"
@@ -190,7 +190,7 @@ Jail = {
 			isZone = true,
 			distance = 0.7,
 			coords = vector3(1746.6778564453, 2481.7138671875, 45.740688323975),
-			label = "Vetements",
+			label = Lang.clothing,
 			keyMap = {
 				key = "E",
 				event = "plouffe_jail:onClothing"
@@ -202,7 +202,7 @@ Jail = {
 			coords = vector3(1827.9693603516, 2579.8237304688, 46.014301300049),
 			distance = 1.0,
 			isZone = true,
-			label = "Parler avec le garde",
+			label = Lang.jail_speakToGuard,
 			keyMap = {
 				event = "plouffe_jail:onGuardInteraction",
 				key = "E"
@@ -219,7 +219,7 @@ Jail = {
 			coords = vector3(1751.7360839844, 2535.4787597656, 43.58544921875),
 			distance = 2.0,
 			isZone = true,
-			label = "Voir les echanges possible",
+			label = Lang.jail_showTrades,
 			keyMap = {
 				event = "plouffe_jail:open_shop",
 				key = "E"
@@ -258,7 +258,7 @@ Jail = {
 			coords = vector3(1113.6188964844, -637.56158447266, 56.812908172607),
 			distance = 1.0,
 			isZone = true,
-			label = "Parler avec le garde",
+			label = Lang.jail_speakToGuard,
 			keyMap = {
 				event = "plouffe_jail:onComservGuardInteraction",
 				key = "E"
@@ -301,7 +301,7 @@ Jail = {
 			reduceValue = {min = 1, max = 3},
 			distance = 1,
 			isZone = true,
-			label = "Reparer le systeme",
+			label = Lang.jailJobs_fixElectric,
 			params = {job_type = "fix_electricity", job_index = ""},
 			keyMap = {
 				key = "E",
@@ -330,7 +330,7 @@ Jail = {
 			reduceValue = {min = 1, max = 3},
 			distance = 1,
 			isZone = true,
-			label = "Verifier le reseau",
+			label = Lang.jailJobs_inspection,
 			params = {job_type = "check_systems", job_index = ""},
 			keyMap = {
 				key = "E",
@@ -362,7 +362,7 @@ Jail = {
 			reduceValue = {min = 1, max = 3},
 			distance = 6,
 			isZone = true,
-			label = "Passer le soufleur",
+			label = Lang.comservJobs_cleanGround,
 			params = {job_type = "clean_ground", job_index = ""},
 			keyMap = {
 				key = "E",
@@ -386,7 +386,7 @@ Jail = {
 			reduceValue = {min = 1, max = 3},
 			distance = 1.5,
 			isZone = true,
-			label = "Passer le soufleur",
+			label = Lang.jailJobs_cleanKitchen,
 			params = {job_type = "clean_kitchen", job_index = ""},
 			keyMap = {
 				key = "E",
@@ -405,7 +405,7 @@ Jail = {
 			reduceValue = {min = 1, max = 3},
 			distance = 1.0,
 			isZone = true,
-			label = "Passer le soufleur",
+			label = Lang.jailJobs_cleanKitchen,
 			params = {job_type = "clean_cell_block", job_index = ""},
 			keyMap = {
 				key = "E",
@@ -424,7 +424,7 @@ Jail = {
 			reduceValue = {min = 4, max = 8},
 			distance = 0.5,
 			isZone = true,
-			label = "Passer le soufleur",
+			label = Lang.jailJobs_train,
 			params = {job_type = "train_arms", job_index = ""},
 			keyMap = {
 				key = "E",
@@ -443,7 +443,7 @@ Jail = {
 			reduceValue = {min = 4, max = 8},
 			distance = 0.5,
 			isZone = true,
-			label = "Passer le soufleur",
+			label = Lang.jailJobs_train,
 			params = {job_type = "train_traps", job_index = ""},
 			keyMap = {
 				key = "E",

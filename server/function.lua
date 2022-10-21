@@ -313,9 +313,10 @@ function Jail.ValidateConfig()
     Jail.maxJail = tonumber(GetConvar("plouffe_jail:max_jail_time", 120))
     Jail.allow_breakout = GetConvar("plouffe_jail:breakout", false)
     Jail.breakout_item = GetConvar("plouffe_jail:breakout_item", "")
-    Jail.breakout_cooldown = GetConvar("plouffe_jail:breakout_cooldown", 12)
-    Jail.plouffe_doorlock = GetConvar("plouffe_jail:plouffe_doorlock", false)
+    Jail.breakout_cooldown =  tonumber(GetConvar("plouffe_jail:breakout_cooldown", 12))
     Jail.lastBreakOut = tonumber(GetResourceKvpString("lastBreakout")) or 0
+    Jail.minBreakoutCops = tonumber(GetConvar("plouffe_jail:min_breakout_cops", 2))
+    Jail.plouffe_doorlock = GetConvar("plouffe_jail:plouffe_doorlock", false)
 
     Jail.breakout_cooldown *= (60 * 60)
 
@@ -408,6 +409,17 @@ function Jail:ComservCooldownThread(index)
 
         self.coolDownThread = false
     end)
+end
+
+function Jail.GetCops()
+    local count = 0
+
+    for k,v in pairs(Jail.PoliceGroups) do
+        local cops = Groups.GetGroupPlayers(v)
+        count += cops.len
+    end
+
+    return count
 end
 
 function Jail.SendPlayerToJail(time,targetId,auth)
@@ -563,8 +575,16 @@ function Jail.ThermalInstalled(auth)
         return
     end
 
+    if Jail.GetCops() < Jail.minBreakoutCops then
+        return
+    end
+
+    if not (os.time() - Jail.lastBreakOut > Jail.breakout_cooldown) then
+        return
+    end
+
     local pedCoords = GetEntityCoords(GetPlayerPed(playerId))
-    if #(Jail.breakOutCoords - pedCoords) > 2 then
+    if #(Jail.breakOutCoords - pedCoords) > 8 then
         return
     end
 
@@ -577,6 +597,16 @@ function Jail.ThermalInstalled(auth)
     Jail.Breakout()
 end
 RegisterNetEvent("plouffe_jail:installed_thermite", Jail.ThermalInstalled)
+
+function Jail.RemoveItem(item, auth)
+    local playerId = source
+    if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:removeItem") then
+        return
+    end
+
+    Inventory.RemoveItem(playerId, item, 1)
+end
+RegisterNetEvent("plouffe_jail:removeItem", Jail.RemoveItem)
 
 function Jail.ReduceSentence(playerId, amount)
     local unique = Uniques.Get(playerId)
@@ -717,7 +747,7 @@ exports("ReduceComserv", Jail.ReduceComserv)
 
 function Jail.Breakout()
     if not Jail.allow_breakout then
-        return
+        return Utils.Debug("No breakout")
     end
 
     for k,v in pairs(active_jailed_players) do
@@ -742,8 +772,8 @@ function Jail.Breakout()
 
     GlobalState.jail_breakout = true
 
+    local list = {'bolingbroke_gate_1', 'bolingbroke_gate_2', 'bolingbroke_gate_3', 'bolingbroke_entrance_fence'}
     if Jail.plouffe_doorlock then
-        local list = {'bolingbroke_gate_1', 'bolingbroke_gate_2', 'bolingbroke_gate_3', 'bolingbroke_entrance_fence'}
         exports.plouffe_doorlock:UpdateDoorStateTable(list, false)
     end
 
@@ -839,8 +869,15 @@ Callback.Register('plouffe_jail:isBreakoutAvaible', function(playerId, auth)
     if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:isBreakoutAvaible") then
         return
     end
+    if Jail.GetCops() < Jail.minBreakoutCops then
+        return Lang.bank_notEnoughCop
+    end
 
-    return os.time() - Jail.lastBreakOut > Jail.breakout_cooldown
+    if not (os.time() - Jail.lastBreakOut > Jail.breakout_cooldown) then
+        return Lang.breakout_unavaible
+    end
+
+    return false
 end)
 
 AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)

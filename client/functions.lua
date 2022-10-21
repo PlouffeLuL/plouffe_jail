@@ -416,9 +416,9 @@ function Jail.OnYoga()
         return exports.plouffe_status:Yoga()
     end
 
-    if not IsPedActiveInScenario(Jail.cache.ped) then
-        TaskStartScenarioInPlace(Jail.cache.ped, "WORLD_HUMAN_YOGA", 0, true)
-    end
+    -- if not IsPedActiveInScenario(Jail.cache.ped) then
+    --     TaskStartScenarioInPlace(Jail.cache.ped, "WORLD_HUMAN_YOGA", 0, true)
+    -- end
 end
 
 function Jail.OnClothing()
@@ -652,13 +652,13 @@ function Jail.PlantBomb()
         return
     end
 
-    local canBreakOut = Callback.Sync("plouffe_jail:isBreakoutAvaible", Jail.auth)
+    local reason = Callback.Sync("plouffe_jail:isBreakoutAvaible", Jail.auth)
 
-    if not canBreakOut then
+    if reason then
         return Interface.Notifications.Show({
             style = "info",
             header = Lang.jail_label,
-            message = Lang.breakout_unavaible
+            message = reason
         })
     end
 
@@ -689,10 +689,11 @@ function Jail.PlantBomb()
     local ptfx = StartNetworkedParticleFxLoopedOnEntity('scr_heist_ornate_thermal_burn', entity, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, false, false, false, 0)
 
     if succes then
+        TriggerServerEvent("plouffe_jail:installed_thermite", Jail.auth)
         Wait(6000)
+    else
+        TriggerServerEvent("plouffe_jail:removeItem", Jail.breakout_item, Jail.auth)
     end
-
-    TriggerServerEvent("plouffe_jail:installed_thermite", Jail.auth)
 
     Wait(2000)
 
