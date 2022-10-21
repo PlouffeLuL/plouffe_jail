@@ -685,8 +685,6 @@ exports("Remove", Jail.Remove)
 
 function Jail.AddComServ(playerId, amount)
     local unique = Uniques.Get(playerId)
-    local coords = Jail.comServ.coords
-    local ped = GetPlayerPed(playerId)
 
     active_comserv_players[playerId] = true
 
@@ -698,8 +696,14 @@ function Jail.AddComServ(playerId, amount)
         return Jail.Set(playerId, Jail.comServPunition)
     end
 
-    SetEntityCoords(ped, coords.x, coords.y, coords.z)
-    TriggerClientEvent("plouffe_jail:isInComServ", playerId)
+    local retval = {}
+    for k,v in pairs(Jail.comServ.jobs_zones) do
+        if v.active then
+            retval[k] = v.active
+        end
+    end
+
+    Callback.Sync(playerId, "plouffe_jail:setInComserv", retval)
 end
 exports("AddComServ", Jail.AddComServ)
 

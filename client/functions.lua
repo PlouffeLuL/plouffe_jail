@@ -92,8 +92,6 @@ function Jail:RegisterEvents()
     Utils.RegisterNetEvent("plouffe_jail:removeWorkZone", self.RemoveWorkZone)
     Utils.RegisterNetEvent("plouffe_jail:addWorkZone", self.AddWorkZone)
 
-    Utils.RegisterNetEvent("plouffe_jail:isInComServ", self.SetInComserv)
-
     Utils.RegisterNetEvent("plouffe_jail:removeComServZone", self.RemoveComServZone)
     Utils.RegisterNetEvent("plouffe_jail:addComServZone", self.AddComServZone)
 
@@ -102,6 +100,8 @@ function Jail:RegisterEvents()
     Callback.Register("plouffe_jail:unJail", self.SetOutOfJail)
 
     Callback.Register("plouffe_jail:setInJail", self.SetInJail)
+
+    Callback.Register("plouffe_jail:setInComserv", self.SetInComserv)
 
     self.cache = exports.plouffe_lib:OnCache(function(cache)
         self.cache = cache
@@ -162,9 +162,29 @@ function Jail.OutsideComserv()
     --- Comserv zone not sent
 end
 
-function Jail.SetInComserv()
+function Jail.SetInComserv(refreshed)
     Jail.isInComServ = true
-    local refreshed = Callback.Sync("plouffe_jail:refresh_zone", "comserv", Jail.auth)
+
+    Utils.FadeOut(1000, true)
+
+    local coords = Jail.comServ.coords
+    local cam = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+
+    RenderScriptCams(true,true,0,true,true)
+
+    CreateThread(function()
+        SetCamActive(cam,false)
+        SetEntityCoords(Jail.cache.ped, coords.x, coords.y, coords.z)
+        SetCamCoord(cam, coords.x, coords.y, 1500.0)
+        PointCamAtCoord(cam, coords.x, coords.y, coords.z)
+        SetCamActive(cam,true)
+        Utils.FadeIn(10000)
+        Wait(1000)
+        RenderScriptCams(false,true,10000,true,true)
+        Wait(10000)
+        SetCamActive(cam,false)
+        DestroyCam(cam)
+    end)
 
     for k,v in pairs(Jail.comServ.jobs_zones) do
         if refreshed[k] then
