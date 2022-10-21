@@ -5,6 +5,149 @@ local Utils <const> = exports.plouffe_lib:Get("Utils")
 local Inventory <const> = exports.plouffe_lib:Get("Inventory")
 local Uniques <const> = exports.plouffe_lib:Get("Uniques")
 
+local doors = {
+	bolingbroke_gate_1 = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1855.2760009766, 2608.7019042969, 45.672412872314), maxDst = 4.0},
+			{coords = vector3(1838.3487548828, 2607.9177246094, 45.58589553833), maxDst = 4.0},
+		},
+		doors = {
+			{model = 741314661, coords = vector3(1844.9984130859, 2604.8125, 44.639778137207), auto = { distance = 5.0, rate = 1.0 }}
+		},
+        access = {}
+    },
+
+	bolingbroke_gate_2 = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1825.6451416016, 2608.2758789062, 45.588653564453), maxDst = 4.0},
+			{coords = vector3(1812.4141845703, 2607.7119140625, 45.589645385742), maxDst = 4.0},
+		},
+		doors = {
+			{model = 741314661, coords = vector3(1818.5428466797, 2600.0505371094, 44.609661102295), auto = { distance = 5.0, rate = 1.0 }}
+		},
+        access = {}
+    },
+
+	bolingbroke_gate_3 = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1795.3614501953, 2617.1364746094, 45.565105438232), maxDst = 10.0}
+		},
+		doors = {
+			{model = 741314661, coords = vector3(1802.9368896484, 2616.9753417969, 44.602104187012), auto = { distance = 5.0, rate = 1.0 }}
+		},
+        access = {}
+    },
+
+	bolingbroke_entrance_fence = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1797.7608642578, 2596.5649414062, 46.387306213379), maxDst = 2.0}
+		},
+		doors = {
+			{model = -1156020871, coords = vector3(1797.7608642578, 2596.5649414062, 46.387306213379)}
+		},
+        access = {
+			jobs = {
+				police = {rankMin = 0, rankMax = 7},
+				policeoff = {rankMin = 0, rankMax = 7}
+			}
+        }
+    },
+
+	bolingbroke_entrance_hallway_scanner = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1831.3399658203, 2594.9921875, 46.037910461426), maxDst = 2.0}
+		},
+		doors = {
+			{model = -684929024, coords = vector3(1831.3399658203, 2594.9921875, 46.037910461426)}
+		},
+        access = {}
+    },
+
+	bolingbroke_entrance_hallway_photo = {
+		lock = true,
+        lockOnly = true,
+        interactCoords = {
+			{coords = vector3(1838.6169433594, 2593.705078125, 46.036357879639), maxDst = 2.0}
+		},
+		doors = {
+			{model = -684929024, coords = vector3(1838.6169433594, 2593.705078125, 46.036357879639)}
+		},
+        access = {}
+    },
+
+	bolingbroke_information_desk = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1844.4038085938, 2576.9970703125, 46.03560256958), maxDst = 2.0}
+		},
+		doors = {
+			{model = 2024969025, coords = vector3(1844.4038085938, 2576.9970703125, 46.03560256958)}
+		},
+        access = {}
+    },
+
+	bolingbroke_staff_entry = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1837.6337890625, 2576.9916992188, 46.038597106934), maxDst = 2.0}
+		},
+		doors = {
+			{model = 2024969025, coords = vector3(1837.6337890625, 2576.9916992188, 46.038597106934)}
+		},
+        access = {}
+    },
+
+	bolingbroke_bloc_security_left = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1775.4141845703, 2491.025390625, 49.840057373047), maxDst = 2.0}
+		},
+		doors = {
+			{model = 241550507, coords = vector3(1775.4141845703, 2491.025390625, 49.840057373047)}
+		},
+        access = {}
+    },
+
+	bolingbroke_bloc_security_right = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1772.9385986328, 2495.3132324219, 49.840057373047), maxDst = 2.0}
+		},
+		doors = {
+			{model = 241550507, coords = vector3(1772.9385986328, 2495.3132324219, 49.840057373047)}
+		},
+        access = {}
+    },
+
+	bolingbroke_medical_lab = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1767.3232421875, 2580.83203125, 45.747825622559), maxDst = 2.0}
+		},
+		doors = {
+			{model = -1392981450, coords = vector3(1767.3232421875, 2580.83203125, 45.747825622559)}
+		},
+        access = {}
+    },
+
+	bolingbroke_medical_surgery = {
+		lock = true,
+        interactCoords = {
+			{coords = vector3(1767.169921875, 2583.5065917969, 45.729831695557), maxDst = 2.0}
+		},
+		doors = {
+			{model = -1624297821, coords = vector3(1767.3208007813, 2584.6071777344, 45.753448486328)},
+			{model = -1624297821, coords = vector3(1767.3208007813, 2582.3078613281, 45.753448486328)}
+		},
+        access = {}
+    }
+}
+
 local active_comserv_players = {}
 local active_jailed_players = {}
 
@@ -52,6 +195,10 @@ function Jail.Wake()
     Jail.ValidateConfig()
     Jail:CreateWorkZones()
 
+    if Jail.plouffe_doorlock  then
+        Utils.CreateDepencie("plouffe_doorlock", Jail.ExportDoors)
+    end
+
     comserv_characters = json.decode(GetResourceKvpString("comserv_characters") or "[]")
     jailed_characters = json.decode(GetResourceKvpString("jailed_characters") or "[]")
     jailers_reputation = json.decode(GetResourceKvpString("jailers_reputation") or "[]")
@@ -95,6 +242,12 @@ function Jail.Wake()
     })
 
     Server.ready = true
+end
+
+function Jail.ExportDoors()
+    for k,v in pairs(doors) do
+        exports.plouffe_doorlock:RegisterDoor(k,v, false)
+    end
 end
 
 function Jail:CreateWorkZones()
@@ -154,16 +307,27 @@ function Jail:GetData(key, playerId)
 end
 
 function Jail.ValidateConfig()
-    Jail.maxComServ = tonumber(GetConvar("plouffe_jail:max_com_serv", ""))
-    Jail.maxSentencedComServ = tonumber(GetConvar("plouffe_jail:max_com_serv_sentence", ""))
-    Jail.comServPunition = tonumber(GetConvar("plouffe_jail:com_serv_punition", ""))
-    Jail.maxJail = tonumber(GetConvar("plouffe_jail:max_jail_time", ""))
+    Jail.maxComServ = tonumber(GetConvar("plouffe_jail:max_com_serv", 25))
+    Jail.maxSentencedComServ = tonumber(GetConvar("plouffe_jail:max_com_serv_sentence", 100))
+    Jail.comServPunition = tonumber(GetConvar("plouffe_jail:com_serv_punition", 100))
+    Jail.maxJail = tonumber(GetConvar("plouffe_jail:max_jail_time", 120))
+    Jail.allow_breakout = GetConvar("plouffe_jail:breakout", false)
+    Jail.breakout_item = GetConvar("plouffe_jail:breakout_item", "")
+    Jail.breakout_cooldown = GetConvar("plouffe_jail:breakout_cooldown", 12)
+    Jail.plouffe_doorlock = GetConvar("plouffe_jail:plouffe_doorlock", false)
+    Jail.lastBreakOut = tonumber(GetResourceKvpString("lastBreakout")) or 0
+
+    Jail.breakout_cooldown *= (60 * 60)
 
     local data = json.decode(GetConvar("plouffe_jail:police_groups", ""))
     if data then
         Jail.PoliceGroups = {}
         for k,v in pairs(data) do
             Jail.PoliceGroups[v] = true
+        end
+
+        for k,v in pairs(doors) do
+            v.access.group = Jail.PoliceGroups
         end
 
         data = nil
@@ -305,8 +469,8 @@ function Jail.FinishedJob(data, auth)
     if not zone.active then
         return Utils.Notify(playerId, {
             style = "info",
-            header = "Jail",
-            message = "Already completed"
+            header = Lang.jail_label,
+            message = Lang.already_completed
         })
     end
 
@@ -362,8 +526,8 @@ function Jail.FinishedComservJob(data, auth)
     if not zone.active then
         return Utils.Notify(playerId, {
             style = "info",
-            header = "Community services",
-            message = "Already completed"
+            header = Lang.comserv_label,
+            message = Lang.already_completed
         })
     end
 
@@ -393,11 +557,38 @@ function Jail.SendPlayerToComserv(amount,targetId,auth)
 end
 RegisterNetEvent("plouffe_jail:sendToComserv", Jail.SendPlayerToComserv)
 
+function Jail.ThermalInstalled(auth)
+    local playerId = source
+    if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:installed_thermite") then
+        return
+    end
+
+    local pedCoords = GetEntityCoords(GetPlayerPed(playerId))
+    if #(Jail.breakOutCoords - pedCoords) > 2 then
+        return
+    end
+
+    if Inventory.Search(playerId, "count", Jail.breakout_item) < 1 then
+        return
+    end
+
+    Inventory.RemoveItem(playerId, Jail.breakout_item, 1)
+
+    Jail.Breakout()
+end
+RegisterNetEvent("plouffe_jail:installed_thermite", Jail.ThermalInstalled)
+
 function Jail.ReduceSentence(playerId, amount)
     local unique = Uniques.Get(playerId)
     if not jailed_characters[unique] then
         return
     end
+
+    Utils.Notify(playerId, {
+        style = "info",
+        header = Lang.jail_label,
+        message = Lang.jail_sentence_down:format(amount)
+    })
 
     jailed_characters[unique].out_time -= (amount * 60)
 end
@@ -408,6 +599,12 @@ function Jail.UpSentence(playerId, amount)
     if not jailed_characters[unique] then
         return
     end
+
+    Utils.Notify(playerId, {
+        style = "info",
+        header = Lang.jail_label,
+        message = Lang.jail_sentence_up:format(amount)
+    })
 
     jailed_characters[unique].out_time += (amount * 60)
 end
@@ -512,11 +709,56 @@ function Jail.ReduceComserv(idType, id, amount)
 
     Utils.Notify(id, {
         style = "info",
-        header = "Community services",
-        message = ("%s left to do"):format(comserv_characters[unique].amount)
+        header = Lang.comserv_label,
+        message = Lang.comserv_jobsLeft:format(comserv_characters[unique].amount)
     })
 end
 exports("ReduceComserv", Jail.ReduceComserv)
+
+function Jail.Breakout()
+    if not Jail.allow_breakout then
+        return
+    end
+
+    for k,v in pairs(active_jailed_players) do
+        local unique = Uniques.Get(k)
+        jailed_characters[unique] = nil
+    end
+
+    jailed_characters()
+
+    pcall(function ()
+        exports.plouffe_dispatch:sendAlert({
+            index = 'StreetRace',
+            coords = Jail.releasedCoords,
+            job = Jail.PoliceGroups,
+            blip = {name = "10-30A", sprite = 9, scale = 1.0, color = 1, radius = 400.0},
+            code = "10-30A",
+            name = "Evasion de prison",
+            style = 'red',
+            fa = "fa-exclamation-triangle"
+        })
+    end)
+
+    GlobalState.jail_breakout = true
+
+    if Jail.plouffe_doorlock then
+        local list = {'bolingbroke_gate_1', 'bolingbroke_gate_2', 'bolingbroke_gate_3', 'bolingbroke_entrance_fence'}
+        exports.plouffe_doorlock:UpdateDoorStateTable(list, false)
+    end
+
+    SetTimeout(1000 * 60 * 1, function()
+        if Jail.plouffe_doorlock then
+            exports.plouffe_doorlock:UpdateDoorStateTable(list, true)
+        end
+
+        GlobalState.jail_breakout = false
+    end)
+
+    Jail.lastBreakOut = os.time()
+    SetResourceKvp("lastBreakout",  Jail.lastBreakOut)
+end
+exports("Breakout", Jail.Breakout)
 
 Callback.Register("plouffe_jail:loadPlayer", function(playerId)
     local registred, key = Auth.Register(playerId)
@@ -591,6 +833,14 @@ Callback.Register("plouffe_jail:getComServLeft", function(playerId, auth)
     local unique = Uniques.Get(playerId)
 
     return comserv_characters[unique] and comserv_characters[unique].amount or 0
+end)
+
+Callback.Register('plouffe_jail:isBreakoutAvaible', function(playerId, auth)
+    if not Auth.Validate(playerId,auth) or not Auth.Events(playerId,"plouffe_jail:isBreakoutAvaible") then
+        return
+    end
+
+    return os.time() - Jail.lastBreakOut > Jail.breakout_cooldown
 end)
 
 AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)

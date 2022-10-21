@@ -131,8 +131,8 @@ function Jail.onComservGuardInteraction()
 
     Interface.Notifications.Show({
         style = "info",
-        header = "Community services",
-        message = ("%s left to do"):format(data)
+        header = Lang.comserv_label,
+        message = Lang.comserv_jobsLeft:format(data)
     })
 end
 
@@ -185,8 +185,8 @@ function Jail.ClearComServ()
 
     Interface.Notifications.Show({
         style = "info",
-        header = "Community services",
-        message = "You have finished your community services"
+        header = Lang.comserv_label,
+        message = Lang.comserv_finished
     })
 
     return true
@@ -357,8 +357,8 @@ function Jail.OpenShop()
     if #menu < 1 then
         return Interface.Notifications.Show({
             style = "info",
-            header = "Jail",
-            message = "Do some work if you want to talk to me"
+            header = Lang.jail_label,
+            message = Lang.jail_noTrades
         })
     end
 
@@ -496,7 +496,7 @@ function Jail.SendToJailMenu(data)
             {
                 id = "time",
                 header = Lang.sentence_time,
-                placeholder = "minutes"
+                placeholder = Lang.minutes
             }
         })
 
@@ -508,7 +508,7 @@ function Jail.SendToJailMenu(data)
         if not time or (time and time > Jail.maxJail) then
             return Interface.Notifications.Show({
                 style = "info",
-                header = "Jail",
+            header = Lang.jail_label,
                 message = Lang.invalid_entry
             })
         end
@@ -517,7 +517,7 @@ function Jail.SendToJailMenu(data)
     else
         Interface.Notifications.Show({
             style = "info",
-            header = "Jail",
+            header = Lang.jail_label,
             message = Lang.no_player_near
         })
     end
@@ -528,7 +528,7 @@ function Jail.UnjailMenu()
     local data = Interface.Dialog.Open({
         {
             id = "playerId",
-            header = "Player Id",
+            header = "Id",
             placeholder = "pid"
         },
         {
@@ -557,7 +557,7 @@ function Jail.ComservMenu(data)
         local data = Interface.Dialog.Open({
             {
                 id = "amount",
-                header = "Amount",
+                header = Lang.amount,
                 placeholder = "1,2,3,4,5 ..."
             }
         })
@@ -570,7 +570,7 @@ function Jail.ComservMenu(data)
         if not amount or amount > Jail.maxSentencedComServ then
             return Interface.Notifications.Show({
                 style = "info",
-                header = "Community services",
+                header = Lang.comserv_label,
                 message = Lang.invalid_entry
             })
         end
@@ -579,7 +579,7 @@ function Jail.ComservMenu(data)
     else
         Interface.Notifications.Show({
             style = "info",
-            header = "Community services",
+            header = Lang.comserv_label,
             message = Lang.no_player_near
         })
     end
@@ -645,6 +645,61 @@ function Jail.CheckForEntityDamage()
 
     Jail.cookie_entityDamaged = AddEventHandler("entityDamaged", Jail.entityDamaged)
 end
+
+function Jail.PlantBomb()
+    local pedCoords = GetEntityCoords(Jail.cache.ped)
+    if #(Jail.breakOutCoords - pedCoords) > 2 then
+        return
+    end
+
+    local canBreakOut = Callback.Sync("plouffe_jail:isBreakoutAvaible", Jail.auth)
+
+    if not canBreakOut then
+        return Interface.Notifications.Show({
+            style = "info",
+            header = Lang.jail_label,
+            message = Lang.breakout_unavaible
+        })
+    end
+
+    local coords = GetOffsetFromEntityInWorldCoords(Jail.cache.ped, 0.0, 1.0, -0.6)
+
+    CreateThread(function()
+        Utils.PlayAnim(8000, "anim@amb@clubhouse@tutorial@bkr_tut_ig3@", "machinic_loop_mechandplayer" , 1, 3.0, 2.0, 6000, false, true, true, {model = "hei_prop_heist_thermite", bone = 28422} )
+    end)
+
+    local entity = Utils.CreateProp("hei_prop_heist_thermite",coords,0.0,true,false)
+    Utils.AssureFxAsset("scr_ornate_heist")
+
+    DetachEntity(entity,false,false)
+    FreezeEntityPosition(entity, true)
+    SetEntityCoords(entity, coords.x, coords.y, coords.z)
+
+    pcall(function()
+        exports.plouffe_alerts:SendAlert("IllegalActivity")
+    end)
+
+    local succes = Interface.Lines.New({
+        time = 20,
+        maxMoves = 7,
+        points = 14
+    })
+
+    UseParticleFxAssetNextCall('scr_ornate_heist')
+    local ptfx = StartNetworkedParticleFxLoopedOnEntity('scr_heist_ornate_thermal_burn', entity, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, false, false, false, 0)
+
+    if succes then
+        Wait(6000)
+    end
+
+    TriggerServerEvent("plouffe_jail:installed_thermite", Jail.auth)
+
+    Wait(2000)
+
+    StopParticleFxLooped(ptfx, 0)
+    DeleteEntity(entity)
+end
+exports("PlantBomb", Jail.PlantBomb)
 
 exports.plouffe_lib:OnFrameworkLoaded(function() CreateThread(wake) end)
 
