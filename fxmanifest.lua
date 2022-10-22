@@ -2,7 +2,7 @@ fx_version "adamant"
 
 name         'plouffe_jail'
 author       'PlouffeLuL'
-version      '1.0.0'
+version      '2.0.0'
 repository   'https://github.com/plouffelul/plouffe_jail'
 description  'Jail and community services script'
 
